@@ -18,11 +18,17 @@ module Refile
     end
 
     def id
-      record.send(:"#{name}_id")
+      read(:id)
     end
 
-    def id=(id)
-      record.send(:"#{name}_id=", id) unless record.frozen?
+    def read(column)
+      m = "#{name}_#{column}"
+      record.send(m) if record.respond_to?(m)
+    end
+
+    def write(column, value)
+      m = "#{name}_#{column}="
+      record.send(m, value) if record.respond_to?(m) and not record.frozen?
     end
 
     def get
@@ -45,6 +51,9 @@ module Refile
       if valid?(uploadable)
         @cache_file = cache.upload(uploadable)
         @cache_id = @cache_file.id
+        write(:size, uploadable.size)
+        write(:content_type, Refile.extract_content_type(uploadable))
+        write(:filename, Refile.extract_filename(uploadable))
       elsif @raise_errors
         raise Refile::Invalid, @errors.join(", ")
       end
@@ -69,7 +78,7 @@ module Refile
       elsif cached?
         file = store.upload(cache.get(cache_id))
         delete!
-        self.id = file.id
+        write(:id, file.id)
       end
     end
 
@@ -80,7 +89,7 @@ module Refile
         @cache_file = nil
       end
       store.delete(id) if id
-      self.id = nil
+      write(:id, nil)
     end
 
     def remove?

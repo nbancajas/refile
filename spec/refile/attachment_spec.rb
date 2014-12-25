@@ -5,7 +5,7 @@ describe Refile::Attachment do
     Class.new do
       extend Refile::Attachment
 
-      attr_accessor :document_id, :document_name, :document_size
+      attr_accessor :document_id, :document_filename, :document_size, :document_content_type
 
       attachment :document, **opts
     end
@@ -18,6 +18,16 @@ describe Refile::Attachment do
 
       expect(Refile.cache.get(instance.document.id).read).to eq("hello")
       expect(Refile.cache.get(instance.document_cache_id).read).to eq("hello")
+    end
+
+    it "sets other accessors" do
+      instance.document = Refile::FileDouble.new("hi", "hello.txt", content_type: "text/plain")
+
+      expect(Refile.cache.get(instance.document.id).read).to eq("hi")
+      expect(Refile.cache.get(instance.document_cache_id).read).to eq("hi")
+      expect(instance.document_filename).to eq("hello.txt")
+      expect(instance.document_size).to eq(2)
+      expect(instance.document_content_type).to eq("text/plain")
     end
   end
 
