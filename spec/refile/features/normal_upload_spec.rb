@@ -43,6 +43,9 @@ feature "Normal HTTP Post file uploads" do
     click_button "Create"
 
     expect(page).to have_selector("h1", text: "A cool post")
+    expect(page).to have_selector(".content-type", text: "text/plain")
+    expect(page).to have_selector(".size", text: "6")
+    expect(page).to have_selector(".filename", text: "hello.txt")
     click_link("Document")
     expect(page.source.chomp).to eq("hello")
   end
