@@ -4,7 +4,7 @@ class DirectPostsController < ApplicationController
   end
 
   def create
-    @post = Post.new(params.require(:post).permit(:title, :document_cache_id))
+    @post = Post.new(params.require(:post).permit(:title, :document_cache_id, :document_filename, :document_size, :document_content_type))
 
     if @post.save
       redirect_to [:normal, @post]

@@ -28,28 +28,32 @@ module Refile
     end
 
     # @ignore
-    #   rubocop:disable Metrics/AbcSize
-    def attachment_field(object_name, method, options = {})
+    #   rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
+    def attachment_field(object_name, method, object:, **options)
       options[:data] ||= {}
 
-      if options[:object]
-        attacher = options[:object].send(:"#{method}_attacher")
-        options[:accept] = attacher.accept
+      attacher = object.send(:"#{method}_attacher")
+      options[:accept] = attacher.accept
 
-        if options[:direct]
-          host = options[:host] || Refile.host || request.base_url
-          backend_name = Refile.backends.key(attacher.cache)
+      if options[:direct]
+        host = options[:host] || Refile.host || request.base_url
+        backend_name = Refile.backends.key(attacher.cache)
 
-          url = ::File.join(host, main_app.refile_app_path, backend_name)
-          options[:data].merge!(direct: true, as: "file", url: url)
-        end
+        url = ::File.join(host, main_app.refile_app_path, backend_name)
+        options[:data].merge!(direct: true, as: "file", url: url)
+      end
 
-        if options[:presigned] and attacher.cache.respond_to?(:presign)
-          options[:data].merge!(direct: true).merge!(attacher.cache.presign.as_json)
+      if options[:presigned] and attacher.cache.respond_to?(:presign)
+        options[:data].merge!(direct: true).merge!(attacher.cache.presign.as_json)
+      end
+
+      html = file_field(object_name, method, options)
+      [:cache_id, :filename, :size, :content_type].each do |field|
+        if object.respond_to?(:"#{method}_#{field}") and object.respond_to?(:"#{method}_#{field}=")
+          html << hidden_field(object_name, :"#{method}_#{field}", object: object)
         end
       end
-      hidden_field(object_name, :"#{method}_cache_id", options.slice(:object)) +
-        file_field(object_name, method, options)
+      html
     end
   end
 end
